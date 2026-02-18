@@ -1,0 +1,160 @@
+/* ── Global ─────────────────────────────────────────────────────────── */
+Screen {
+    background: #1e1e2e;
+    color: #cdd6f4;
+}
+
+/* ── Menu screen ────────────────────────────────────────────────────── */
+MenuScreen {
+    align: center middle;
+}
+
+#menu-box {
+    width: auto;
+    min-width: 56;
+    height: auto;
+    padding: 1 3 2 3;
+    border: double #89b4fa;
+    background: #181825;
+}
+
+#logo {
+    color: #89b4fa;
+    text-align: center;
+}
+
+#tagline {
+    color: #6c7086;
+    text-align: center;
+    padding-bottom: 1;
+}
+
+#menu-version {
+    dock: bottom;
+    color: #45475a;
+    padding: 0 1;
+}
+
+#loaded-file {
+    text-align: center;
+    padding: 1 0 0 0;
+    color: #cdd6f4;
+}
+
+#menu-box Button {
+    width: 100%;
+    margin-top: 1;
+}
+
+#menu-box Button:focus {
+    text-style: none;
+}
+
+/* ── File browser (modal) ───────────────────────────────────────────── */
+FileBrowserScreen {
+    align: center middle;
+    background: transparent 60%;
+}
+
+#browser-wrap {
+    width: 80%;
+    height: 80%;
+    border: thick #89b4fa;
+    background: #1e1e2e;
+}
+
+#browser-title {
+    background: #313244;
+    color: #89b4fa;
+    height: 3;
+    padding: 1 0;
+    border-bottom: solid #45475a;
+}
+
+#file-tree {
+    height: 1fr;
+    background: #1e1e2e;
+    border: none;
+    border-bottom: solid #45475a;
+}
+
+#browser-actions {
+    height: auto;
+    padding: 1 2;
+    align: right middle;
+}
+
+#browser-actions Button {
+    width: auto;
+    margin-left: 1;
+}
+
+/* ── Presentation screen ────────────────────────────────────────────── */
+PresentationScreen {
+    layout: vertical;
+    background: #1e1e2e;
+}
+
+#pres-header {
+    background: #313244;
+    color: #cdd6f4;
+    height: 3;
+    padding: 1 2;
+    border-bottom: solid #45475a;
+}
+
+#content {
+    height: 1fr;
+    padding: 1 4;
+}
+
+.block {
+    margin-bottom: 1;
+}
+
+.block-h1 {
+    margin-bottom: 2;
+    text-style: bold;
+}
+
+.block-hr {
+    color: #45475a;
+}
+
+Footer {
+    background: #181825;
+}
+
+/* ── Help screen ────────────────────────────────────────────────────── */
+HelpScreen {
+    layout: vertical;
+    background: #1e1e2e;
+}
+
+#help-title {
+    background: #313244;
+    color: #89b4fa;
+    height: 3;
+    padding: 1 2;
+    border-bottom: solid #45475a;
+}
+
+#help-content {
+    height: 1fr;
+    padding: 0 2;
+}
+
+#help-actions {
+    height: auto;
+    padding: 1 2;
+    border-top: solid #45475a;
+    background: #181825;
+}
+
+#help-actions Button {
+    width: auto;
+}
+
+#help-actions-gap {
+    width: 1fr;
+}
