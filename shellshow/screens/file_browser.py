@@ -1,5 +1,6 @@
 """Modal file browser for selecting a Markdown presentation file."""
 
+import asyncio
 from pathlib import Path
 from typing import Iterable
 
@@ -8,6 +9,7 @@ from textual.binding import Binding
 from textual.containers import Container, Horizontal
 from textual.screen import ModalScreen
 from textual.widgets import Button, DirectoryTree, Static, Tree
+from textual._work_decorator import work
 
 
 class _MdDirectoryTree(DirectoryTree):
@@ -15,6 +17,41 @@ class _MdDirectoryTree(DirectoryTree):
 
     def filter_paths(self, paths: Iterable[Path]) -> Iterable[Path]:
         return [p for p in paths if p.is_dir() or p.suffix.lower() == ".md"]
+
+    def on_mount(self) -> None:
+        self.expand_to(Path.cwd())
+
+    @work
+    async def expand_to(self, target: Path) -> None:
+        """Expand the tree and move the cursor to *target*."""
+        try:
+            parts = target.relative_to(self.path).parts
+        except ValueError:
+            return
+
+        node = self.root
+        for part in parts:
+            node.expand()
+            # Poll until children are loaded (up to ~1 s).
+            child_map: dict[str, object] = {}
+            for _ in range(20):
+                await asyncio.sleep(0.05)
+                child_map = {}
+                for child in node.children:
+                    try:
+                        child_map[child.data.path.name] = child
+                    except AttributeError:
+                        pass
+                if child_map:
+                    break
+
+            next_node = child_map.get(part)
+            if next_node is None:
+                break
+            node = next_node
+
+        self.scroll_to_node(node, animate=False)
+        self.move_cursor(node)
 
 
 class FileBrowserScreen(ModalScreen[Path | None]):
@@ -27,7 +64,7 @@ class FileBrowserScreen(ModalScreen[Path | None]):
     def compose(self) -> ComposeResult:
         with Container(id="browser-wrap"):
             yield Static("  Select a Markdown (.md) presentation file", id="browser-title")
-            yield _MdDirectoryTree(Path.cwd(), id="file-tree")
+            yield _MdDirectoryTree(Path(Path.cwd().anchor), id="file-tree")
             with Horizontal(id="browser-actions"):
                 yield Button("Open [dim](enter)[/]", variant="primary", id="btn-open", disabled=True)
                 yield Button("Cancel [dim](esc)[/]", variant="default", id="btn-cancel")
