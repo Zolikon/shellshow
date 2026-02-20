@@ -46,3 +46,4 @@ class ProjectMeta:
     date: str | None = None       # shown on the title page; omitted if not set
     table_of_content: bool = False  # if True, inserts a TOC page after the title page
     align: str | None = None         # default block alignment: left / center / right (default: center)
+    animate: str | None = None       # default entrance animation for all blocks (fade / slide / slide-left)

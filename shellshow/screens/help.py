@@ -117,6 +117,7 @@ Supported keys:
 | `color` | Default text colour for every block (overridable per block with `meta[color:...]`) |
 | `slideBG` | Background colour applied to every slide (CSS color name or `#rrggbb`) |
 | `align` | Default block alignment: `left`, `center`, `right` (applies to all blocks except list items, which are always `left` unless overridden per block) |
+| `animate` | Default entrance animation for every block: `fade`, `slide`, `slide-left` (overridable per block with `meta[animate:...]`; omit for no animation) |
 
 When a title page is present, **← / p** from slide 1 navigates back to it.
 
@@ -155,6 +156,17 @@ Supported keys:
 | `text` | Rich style token | e.g. `bold`, `italic` |
 | `align` | `left` `center` `right` | Horizontal alignment (default: `left`; list items always default to `left` regardless of project setting) |
 | `padding` | 1, 2, or 4 integers | Whitespace around block (`padding:1`, `padding:1 4`, `padding:1 2 3 4`) |
+| `animate` | `fade` `slide` `slide-left` | Entrance animation when the block is revealed (forward navigation only) |
+
+### Animation types
+
+| Value | Effect |
+|---|---|
+| `fade` | Fades in (opacity 0 → 1, 0.4 s) |
+| `slide` | Rises up from 3 rows below (0.35 s) |
+| `slide-left` | Enters from the right, 20 columns (0.35 s) |
+
+Animations fire only on forward reveal (**Enter / → / Space**). Backward navigation and page jumps are always instant. H1 titles cannot be animated (they are pre-revealed). Unknown values are silently ignored.
 
 ---
 
@@ -323,6 +335,7 @@ Supported keys:
 - `color` — default text colour for every block; overridable per block with `meta[color:...]`
 - `slideBG` — background colour applied to the entire slide area (CSS name or `#rrggbb`)
 - `align` — default block alignment: `left`, `center`, `right` (applies to all blocks except list items, which are always `left` unless overridden per block with `meta[align:...]`)
+- `animate` — default entrance animation for every block: `fade`, `slide`, `slide-left`; omit for no animation; overridable per block with `meta[animate:...]`
 
 The opening `<!--` must be alone on the first line; the closing `-->` must be alone on its own line.
 
@@ -352,6 +365,7 @@ Supported `meta` keys and values:
 - text: bold, italic, underline, strike, dim, reverse
 - align: left, center, right (default is center — omit to use center)
 - padding: 1, 2, or 4 space-separated integers (top/bottom, left/right, or all four sides)
+- animate: fade | slide | slide-left — entrance animation on forward reveal only; ignored on backward navigation and H1 titles
 
 ## YOUR TASK
 

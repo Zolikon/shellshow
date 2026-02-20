@@ -250,6 +250,35 @@ Links render as **underlined bright-blue text** and are clickable in terminals t
 
 You can combine links with other formatting: **[bold link](https://example.com)**
 
+# Animations
+
+## Entrance animations with meta[animate:...]
+
+Per-block `meta[animate:...]` overrides the project-level `animate` key.
+Set `animate: fade` (or `slide` / `slide-left`) in the project metadata block to apply a default animation to every block without having to tag each one.
+
+<!-- meta[animate:fade] -->
+
+This block **fades in** (opacity 0 → 1, 0.4 s).
+
+<!-- meta[animate:slide] -->
+
+This block **slides up** from 3 rows below (0.35 s).
+
+<!-- meta[animate:slide-left] -->
+
+This block **slides in from the right**, 20 columns (0.35 s).
+
+This block has **no animation** — instant reveal (control).
+
+<!-- meta[animate:fade|color:bright_cyan] -->
+
+Animations combine freely with other meta keys — this one is **fade + bright_cyan**.
+
+<!-- meta[animate:unknown] -->
+
+Unknown animate value — silently ignored, block reveals normally.
+
 # Pixel Images
 
 ## A heart drawn with digit 1 (red)
@@ -275,7 +304,7 @@ You can combine links with other formatting: **[bold link](https://example.com)*
 
 Background color is not **supported**
 
-<!-- meta[align:left] -->
+<!-- meta[align:right] -->
 
 ```image
 0440440

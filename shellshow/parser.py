@@ -76,6 +76,7 @@ def _parse_project_meta(lines: list[str]) -> tuple[ProjectMeta | None, int]:
         date=props.get("date"),
         table_of_content=props.get("tableofcontent") == "true",
         align=props.get("align"),
+        animate=props.get("animate"),
     ), i
 
 

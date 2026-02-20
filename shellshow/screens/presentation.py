@@ -14,6 +14,7 @@ from rich.text import Text
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Container, VerticalScroll
+from textual.css.scalar import ScalarOffset
 from textual.screen import Screen
 from textual.widgets import Footer, Static
 
@@ -271,6 +272,47 @@ class PresentationScreen(Screen):
             text.stylize(" ".join(parts))
         return text
 
+    # ── Animation ────────────────────────────────────────────────────────
+
+    _ANIMATE_DURATION: dict[str, float] = {
+        "fade":       0.4,
+        "slide":      0.35,
+        "slide-left": 0.35,
+    }
+    _ANIMATE_EASING: dict[str, str] = {
+        "fade":       "out_cubic",
+        "slide":      "out_cubic",
+        "slide-left": "out_cubic",
+    }
+
+    def _animate_block_widget(self, widget: Static, block: Block) -> None:
+        """Apply entrance animation to a newly mounted widget if block requests it."""
+        animate_type = block.metadata.props.get("animate") if block.metadata else None
+        if not animate_type:
+            animate_type = self.project_meta.animate if self.project_meta else None
+        if not animate_type:
+            return
+
+        duration = self._ANIMATE_DURATION.get(animate_type, 0.4)
+        easing   = self._ANIMATE_EASING.get(animate_type, "out_cubic")
+
+        if animate_type == "fade":
+            widget.styles.opacity = 0.0
+            self.call_after_refresh(
+                lambda: widget.styles.animate("opacity", 1.0, duration=duration, easing=easing)
+            )
+        elif animate_type == "slide":
+            widget.styles.offset = ("0", "3")
+            self.call_after_refresh(
+                lambda: widget.styles.animate("offset", ScalarOffset.from_offset((0, 0)), duration=duration, easing=easing)
+            )
+        elif animate_type == "slide-left":
+            widget.styles.offset = ("20", "0")
+            self.call_after_refresh(
+                lambda: widget.styles.animate("offset", ScalarOffset.from_offset((0, 0)), duration=duration, easing=easing)
+            )
+        # Unknown values silently ignored.
+
     def _to_renderable(self, block: Block):
         renderable = self._build_renderable(block)
         meta = block.metadata
@@ -407,9 +449,12 @@ class PresentationScreen(Screen):
             block = page.blocks[self.current_block_idx]
             self.current_block_idx += 1
             container = self.query_one("#content", VerticalScroll)
-            container.mount(
-                Static(self._to_renderable(block), classes=f"block block-{block.type.value}")
+            widget = Static(
+                self._to_renderable(block),
+                classes=f"block block-{block.type.value}",
             )
+            container.mount(widget)
+            self._animate_block_widget(widget, block)
             self._update_header()
             self.call_after_refresh(container.scroll_end)
         elif self.current_page_idx < len(self.pages) - 1:
