@@ -88,13 +88,9 @@ uv run shellshow
 Place a comment block on the **very first line** of your file:
 
 ```markdown
-## <!--
-
+<!--
 color: bright_cyan
 slideBG: #0f0f23
-
----
-
 -->
 ```
 
@@ -166,7 +162,7 @@ def highlighted():
 
 text: applies a style token.
 
-align: center is the default — no metadata needed.
+align: left is the default — no metadata needed.
 
 <!-- meta[align:right] -->
 

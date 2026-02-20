@@ -272,8 +272,15 @@ class PresentationScreen(Screen):
                     renderable = Padding(renderable, pad)  # type: ignore[arg-type]
                 except (ValueError, TypeError):
                     pass
-        # align — default to center; override with meta[align:left/right]
-        align = (meta.props.get("align") if meta else None) or "center"
+        # List items are always left-aligned unless explicitly overridden per block.
+        # Other blocks: per-block meta > project align > left.
+        per_block_align = meta.props.get("align") if meta else None
+        if per_block_align:
+            align = per_block_align
+        elif block.type == BlockType.LIST_ITEM:
+            align = "left"
+        else:
+            align = (self.project_meta.align if self.project_meta else None) or "left"
         renderable = Align(renderable, align=align)  # type: ignore[arg-type]
         return renderable
 

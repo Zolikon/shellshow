@@ -98,14 +98,12 @@ Place a multi-line HTML comment **on the very first line** of your file to set p
 
 ```
 <!--
----
 color: bright_cyan
 slideBG: #0f0f23
----
 -->
 ```
 
-Blank lines and `---` separator lines inside the comment are ignored. The comment must open with `<!--` alone on the first line and close with `-->` on its own line.
+The comment must open with `<!--` alone on the first line and close with `-->` on its own line.
 
 Supported keys:
 
@@ -117,6 +115,7 @@ Supported keys:
 | `tableOfContent` | Set to `true` to insert a Table of Contents page after the title page |
 | `color` | Default text colour for every block (overridable per block with `meta[color:...]`) |
 | `slideBG` | Background colour applied to every slide (CSS color name or `#rrggbb`) |
+| `align` | Default block alignment: `left`, `center`, `right` (applies to all blocks except list items, which are always `left` unless overridden per block) |
 
 When a title page is present, **← / p** from slide 1 navigates back to it.
 
@@ -153,7 +152,7 @@ Supported keys:
 | `color` | color name or `#rrggbb` | Text color |
 | `bg` | color name or `#rrggbb` | Background color (all block types) |
 | `text` | Rich style token | e.g. `bold`, `italic` |
-| `align` | `left` `center` `right` | Horizontal alignment (default: `center`) |
+| `align` | `left` `center` `right` | Horizontal alignment (default: `left`; list items always default to `left` regardless of project setting) |
 | `padding` | 1, 2, or 4 integers | Whitespace around block (`padding:1`, `padding:1 4`, `padding:1 2 3 4`) |
 
 ---
@@ -310,10 +309,8 @@ Use a fenced code block with language `image`. Each line is a row of digits (all
 Place a multi-line HTML comment on the **very first line** of the file to set presentation-wide defaults:
 ```
 <!--
----
 color: bright_cyan
 slideBG: #0f0f23
----
 -->
 ```
 Supported keys:
@@ -323,8 +320,9 @@ Supported keys:
 - `tableOfContent` — set to `true` to insert a Table of Contents page after the title page (lists all content slides by title)
 - `color` — default text colour for every block; overridable per block with `meta[color:...]`
 - `slideBG` — background colour applied to the entire slide area (CSS name or `#rrggbb`)
+- `align` — default block alignment: `left`, `center`, `right` (applies to all blocks except list items, which are always `left` unless overridden per block with `meta[align:...]`)
 
-The `---` delimiters and blank lines inside the comment are optional and ignored. The opening `<!--` must be alone on the first line; the closing `-->` must be alone on its own line.
+The opening `<!--` must be alone on the first line; the closing `-->` must be alone on its own line.
 
 ### Optional metadata (styling)
 Place a metadata line **directly before** a block. Write it as an HTML comment — it is invisible in other Markdown renderers and never displayed by ShellShow.
