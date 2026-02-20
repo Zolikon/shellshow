@@ -34,3 +34,14 @@ class Block:
 class Page:
     title: str
     blocks: list[Block] = field(default_factory=list)
+
+
+@dataclass
+class ProjectMeta:
+    """Project-level metadata parsed from the leading HTML comment block."""
+    color: str | None = None      # global default text color (overridable per block)
+    slide_bg: str | None = None   # background color applied to every slide
+    title: str | None = None      # if set, generates a title page before slide 1
+    author: str | None = None     # shown on the title page as "By <author>"
+    date: str | None = None       # shown on the title page; omitted if not set
+    table_of_content: bool = False  # if True, inserts a TOC page after the title page

@@ -1,10 +1,17 @@
+<!--
+title: ShellShow
+author: ShellShow Team
+date: 2026-02-20
+tableOfContent: true
+color: write
+slidebg: #2e4d37
+-->
+
 <!-- meta[color:green] -->
 
 # Welcome to ShellShow
 
 The CLI presentation tool
-
----
 
 ## What is ShellShow?
 
@@ -73,6 +80,45 @@ uv run shellshow
 1. First item revealed
 2. Then the second
 3. Then the third
+
+# Project Metadata
+
+## Set defaults for the whole presentation
+
+Place a comment block on the **very first line** of your file:
+
+```markdown
+## <!--
+
+color: bright_cyan
+slideBG: #0f0f23
+
+---
+
+-->
+```
+
+## Supported project-level keys
+
+`title` — generates a title page before slide 1 (ASCII art, centered)
+
+`author` — shown on the title page as "By &lt;author&gt;"
+
+`color` — global default text colour (overridable per block with `meta[color:...]`)
+
+`slideBG` — background colour applied to every slide
+
+## This sample uses project metadata
+
+`title: ShellShow` — the title page you saw at the start
+
+`author: ShellShow Team` — shown below the title
+
+`color: bright_white` — default text colour for all blocks
+
+<!-- meta[color:green] -->
+
+`meta[color:green]` overrides the global colour for this single block
 
 # Styling & Metadata
 
@@ -152,9 +198,9 @@ Padding and background combined.
 
 ## Bold, italic, and combinations
 
-This text has **bold**, *italic*, and ***bold italic*** words.
+This text has **bold**, _italic_, and **_bold italic_** words.
 
-You can also use __bold__, _italic_, and ___bold italic___ with underscores.
+You can also use **bold**, _italic_, and **_bold italic_** with underscores.
 
 ## Strikethrough and code
 
@@ -170,9 +216,9 @@ Subscript: H<sub>2</sub>O — Superscript: E=mc<sup>2</sup>
 
 ## Mixed inline styles in headings
 
-### *Italic* and **bold** work in sub-headings too
+### _Italic_ and **bold** work in sub-headings too
 
-- List items support **bold**, *italic*, and `code` inline
+- List items support **bold**, _italic_, and `code` inline
 - Even ~~strikethrough~~ works in bullets
 
 # Alerts

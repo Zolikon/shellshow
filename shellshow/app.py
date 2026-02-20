@@ -22,27 +22,27 @@ class ShellShowApp(App):
     def on_mount(self) -> None:
         if self._direct_file:
             try:
-                pages = parse_markdown(self._direct_file)
+                pages, project_meta = parse_markdown(self._direct_file)
             except Exception as exc:
                 self.exit(message=f"Error: {exc}")
                 return
             if not pages:
                 self.exit(message="No slides found in the file.")
                 return
-            self.push_screen(PresentationScreen(pages, exit_on_back=True))
+            self.push_screen(PresentationScreen(pages, project_meta=project_meta, exit_on_back=True))
         else:
             self.push_screen(MenuScreen())
 
     def load_presentation(self, path: Path) -> None:
         try:
-            pages = parse_markdown(path)
+            pages, project_meta = parse_markdown(path)
         except Exception as exc:
             self.notify(f"Failed to load presentation: {exc}", severity="error")
             return
         if not pages:
             self.notify("No slides found in the file.", severity="warning")
             return
-        self.push_screen(PresentationScreen(pages))
+        self.push_screen(PresentationScreen(pages, project_meta=project_meta))
 
 
 def main() -> None:

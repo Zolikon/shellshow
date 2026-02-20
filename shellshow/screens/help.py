@@ -92,6 +92,36 @@ Standard Markdown inline styles work inside paragraphs, headings, and list items
 
 ---
 
+## Project-level metadata
+
+Place a multi-line HTML comment **on the very first line** of your file to set presentation-wide defaults:
+
+```
+<!--
+---
+color: bright_cyan
+slideBG: #0f0f23
+---
+-->
+```
+
+Blank lines and `---` separator lines inside the comment are ignored. The comment must open with `<!--` alone on the first line and close with `-->` on its own line.
+
+Supported keys:
+
+| Key | Effect |
+|---|---|
+| `title` | Generates a title page before slide 1: ASCII art title centered on screen |
+| `author` | Shown on the title page as "By &lt;author&gt;" above the date (optional) |
+| `date` | Shown bottom-left on the title page (optional; omitted if not set) |
+| `tableOfContent` | Set to `true` to insert a Table of Contents page after the title page |
+| `color` | Default text colour for every block (overridable per block with `meta[color:...]`) |
+| `slideBG` | Background colour applied to every slide (CSS color name or `#rrggbb`) |
+
+When a title page is present, **← / p** from slide 1 navigates back to it.
+
+---
+
 ## Metadata / styling
 
 Place a metadata line **directly before** a block. It is written as an HTML comment so it is invisible in other Markdown renderers.
@@ -275,6 +305,26 @@ Use a fenced code block with language `image`. Each line is a row of digits (all
 ### Not supported (will be ignored)
 - Images: `![alt](url)`
 - Plain blockquotes: `> text` (without a `[!TYPE]` tag)
+
+### Project-level metadata (optional)
+Place a multi-line HTML comment on the **very first line** of the file to set presentation-wide defaults:
+```
+<!--
+---
+color: bright_cyan
+slideBG: #0f0f23
+---
+-->
+```
+Supported keys:
+- `title` — generates a title page before slide 1; ASCII art centered on screen
+- `author` — shown on the title page as "By <author>" above the date (optional)
+- `date` — shown bottom-left on the title page (optional; omitted if not set)
+- `tableOfContent` — set to `true` to insert a Table of Contents page after the title page (lists all content slides by title)
+- `color` — default text colour for every block; overridable per block with `meta[color:...]`
+- `slideBG` — background colour applied to the entire slide area (CSS name or `#rrggbb`)
+
+The `---` delimiters and blank lines inside the comment are optional and ignored. The opening `<!--` must be alone on the first line; the closing `-->` must be alone on its own line.
 
 ### Optional metadata (styling)
 Place a metadata line **directly before** a block. Write it as an HTML comment — it is invisible in other Markdown renderers and never displayed by ShellShow.

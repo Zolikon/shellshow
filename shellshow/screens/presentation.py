@@ -13,11 +13,11 @@ from rich.table import Table
 from rich.text import Text
 from textual.app import ComposeResult
 from textual.binding import Binding
-from textual.containers import VerticalScroll
+from textual.containers import Container, VerticalScroll
 from textual.screen import Screen
 from textual.widgets import Footer, Static
 
-from ..models import Block, BlockType, Metadata, Page
+from ..models import Block, BlockType, Metadata, Page, ProjectMeta
 
 _INLINE_RE = re.compile(
     r"\*{3}(.+?)\*{3}"                            # 1: ***bold italic***
@@ -94,18 +94,29 @@ class PresentationScreen(Screen):
         Binding("q", "back_to_menu", "Menu", show=False),
     ]
 
-    def __init__(self, pages: list[Page], exit_on_back: bool = False) -> None:
+    def __init__(self, pages: list[Page], project_meta: ProjectMeta | None = None, exit_on_back: bool = False) -> None:
         super().__init__()
         self.pages = pages
+        self.project_meta = project_meta
         self.exit_on_back = exit_on_back
         self.current_page_idx: int = 0
         # Start at 1 so the H1 header block is auto-visible on page load.
         self.current_block_idx: int = 1
+        self._on_title_page: bool = bool(project_meta and project_meta.title)
+        # Start on TOC only when there is no title page to show first.
+        self._on_toc_page: bool = (
+            not self._on_title_page
+            and bool(project_meta and project_meta.table_of_content)
+        )
 
     # ── Compose ──────────────────────────────────────────────────────────
 
     def compose(self) -> ComposeResult:
         yield Static("", id="pres-header")
+        with Container(id="title-page"):
+            yield Static("", id="title-art")
+            yield Static("", id="title-bottom")
+        yield Container(id="toc-page")
         yield VerticalScroll(id="content")
         yield Footer()
 
@@ -113,7 +124,20 @@ class PresentationScreen(Screen):
         if self.exit_on_back:
             self._bindings.bind("escape", "back_to_menu", description="Exit", show=True)
             self._bindings.bind("q", "back_to_menu", description="Exit", show=False)
-        self._render_current_state()
+        if self.project_meta and self.project_meta.slide_bg:
+            self.styles.background = self.project_meta.slide_bg
+        if self._on_title_page:
+            self.query_one("#content", VerticalScroll).display = False
+            self.query_one("#toc-page", Container).display = False
+            self._show_title_page()
+        elif self._on_toc_page:
+            self.query_one("#title-page", Container).display = False
+            self.query_one("#content", VerticalScroll).display = False
+            self._show_toc_page()
+        else:
+            self.query_one("#title-page", Container).display = False
+            self.query_one("#toc-page", Container).display = False
+            self._render_current_state()
 
     # ── Helpers ──────────────────────────────────────────────────────────
 
@@ -132,6 +156,77 @@ class PresentationScreen(Screen):
             f"  [dim]│[/]  Block {visible_blocks}/{total_blocks}"
         )
 
+    def _show_title_page(self) -> None:
+        pm = self.project_meta
+        assert pm and pm.title
+        figlet = pyfiglet.figlet_format(pm.title, font="standard", width=self.app.console.width)
+        title_style = f"bold {pm.color}" if pm.color else "bold bright_white"
+        title_text = Text(figlet, style=title_style, justify="center")
+        self.query_one("#title-art", Static).update(Align(title_text, "center"))
+
+        bottom = Text()
+        if pm.author:
+            bottom.append(f"By {pm.author}\n", style="#a6adc8")
+        if pm.date:
+            bottom.append(pm.date, style="#6c7086")
+        self.query_one("#title-bottom", Static).update(bottom)
+
+        self.query_one("#pres-header", Static).update(
+            f" [bold cyan]{pm.title}[/]  "
+            f"[dim]│[/]  Title Page"
+            f"  [dim]│[/]  {len(self.pages)} slide{'s' if len(self.pages) != 1 else ''}"
+        )
+
+    def _go_to_title_page(self) -> None:
+        self._on_title_page = True
+        self.query_one("#content", VerticalScroll).display = False
+        self.query_one("#toc-page", Container).display = False
+        self.query_one("#title-page", Container).display = True
+        self._show_title_page()
+
+    def _leave_title_page(self) -> None:
+        self._on_title_page = False
+        self.query_one("#title-page", Container).display = False
+        if self.project_meta and self.project_meta.table_of_content:
+            self._on_toc_page = True
+            self.query_one("#toc-page", Container).display = True
+            self._show_toc_page()
+        else:
+            self.query_one("#content", VerticalScroll).display = True
+            self.current_page_idx = 0
+            self.current_block_idx = 1
+            self._render_current_state()
+
+    def _show_toc_page(self) -> None:
+        toc = self.query_one("#toc-page", Container)
+        toc.remove_children()
+        t = Text()
+        t.append("Table of Contents\n\n", style="bold cyan")
+        for i, page in enumerate(self.pages):
+            t.append(f"{i + 1}.  ", style="dim cyan")
+            t.append((page.title or "(untitled)") + "\n", style="bold")
+        toc.mount(Static(t))
+        self.query_one("#pres-header", Static).update(
+            " [bold cyan]Table of Contents[/]  "
+            f"[dim]│[/]  {len(self.pages)} slide{'s' if len(self.pages) != 1 else ''}"
+        )
+
+    def _go_to_toc_page(self) -> None:
+        self._on_title_page = False
+        self._on_toc_page = True
+        self.query_one("#title-page", Container).display = False
+        self.query_one("#content", VerticalScroll).display = False
+        self.query_one("#toc-page", Container).display = True
+        self._show_toc_page()
+
+    def _leave_toc_page(self) -> None:
+        self._on_toc_page = False
+        self.query_one("#toc-page", Container).display = False
+        self.query_one("#content", VerticalScroll).display = True
+        self.current_page_idx = 0
+        self.current_block_idx = 1
+        self._render_current_state()
+
     def _render_current_state(self) -> None:
         container = self.query_one("#content", VerticalScroll)
         container.remove_children()
@@ -145,17 +240,19 @@ class PresentationScreen(Screen):
         self.call_after_refresh(container.scroll_end)
 
     def _apply_meta(self, text: Text, meta: Metadata | None) -> Text:
-        if meta is None:
-            return text
         parts: list[str] = []
-        if meta.style:
-            parts.append(meta.style)
-        if color := meta.props.get("color"):
-            parts.append(color)
-        if bg := meta.props.get("bg"):
-            parts.append(f"on {bg}")
-        if weight := meta.props.get("text"):
-            parts.append(weight)
+        if meta is not None:
+            if meta.style:
+                parts.append(meta.style)
+            if bg := meta.props.get("bg"):
+                parts.append(f"on {bg}")
+            if weight := meta.props.get("text"):
+                parts.append(weight)
+        # Local color overrides project-level default; fall back to project default.
+        local_color = meta.props.get("color") if meta else None
+        effective_color = local_color or (self.project_meta.color if self.project_meta else None)
+        if effective_color:
+            parts.append(effective_color)
         if parts:
             text.stylize(" ".join(parts))
         return text
@@ -278,6 +375,12 @@ class PresentationScreen(Screen):
     # ── Actions ──────────────────────────────────────────────────────────
 
     def action_next_block(self) -> None:
+        if self._on_title_page:
+            self._leave_title_page()
+            return
+        if self._on_toc_page:
+            self._leave_toc_page()
+            return
         page = self._page
         if self.current_block_idx < len(page.blocks):
             block = page.blocks[self.current_block_idx]
@@ -294,6 +397,12 @@ class PresentationScreen(Screen):
             self._render_current_state()
 
     def action_prev_block(self) -> None:
+        if self._on_title_page:
+            return
+        if self._on_toc_page:
+            if self.project_meta and self.project_meta.title:
+                self._go_to_title_page()
+            return
         if self.current_block_idx > 1:
             self.current_block_idx -= 1
             self._render_current_state()
@@ -301,18 +410,38 @@ class PresentationScreen(Screen):
             self.current_page_idx -= 1
             self.current_block_idx = len(self.pages[self.current_page_idx].blocks)
             self._render_current_state()
+        elif self.project_meta and self.project_meta.table_of_content:
+            self._go_to_toc_page()
+        elif self.project_meta and self.project_meta.title:
+            self._go_to_title_page()
 
     def action_next_page(self) -> None:
+        if self._on_title_page:
+            self._leave_title_page()
+            return
+        if self._on_toc_page:
+            self._leave_toc_page()
+            return
         if self.current_page_idx < len(self.pages) - 1:
             self.current_page_idx += 1
             self.current_block_idx = 1
             self._render_current_state()
 
     def action_prev_page(self) -> None:
+        if self._on_title_page:
+            return
+        if self._on_toc_page:
+            if self.project_meta and self.project_meta.title:
+                self._go_to_title_page()
+            return
         if self.current_page_idx > 0:
             self.current_page_idx -= 1
             self.current_block_idx = 1
             self._render_current_state()
+        elif self.project_meta and self.project_meta.table_of_content:
+            self._go_to_toc_page()
+        elif self.project_meta and self.project_meta.title:
+            self._go_to_title_page()
 
     def action_back_to_menu(self) -> None:
         if self.exit_on_back:

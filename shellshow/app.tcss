@@ -95,6 +95,31 @@ PresentationScreen {
     background: #1e1e2e;
 }
 
+/* ── Title / TOC pages ──────────────────────────────────────────────── */
+#title-page {
+    height: 1fr;
+    align: center middle;
+}
+
+#title-art {
+    width: 100%;
+}
+
+#title-bottom {
+    dock: bottom;
+    height: auto;
+    padding: 1 4;
+}
+
+#toc-page {
+    height: 1fr;
+    align: center middle;
+}
+
+#toc-page Static {
+    width: auto;
+}
+
 #pres-header {
     background: #313244;
     color: #cdd6f4;

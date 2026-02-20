@@ -3,7 +3,7 @@
 import re
 from pathlib import Path
 
-from .models import Block, BlockType, Metadata, Page
+from .models import Block, BlockType, Metadata, Page, ProjectMeta
 
 _METADATA_RE = re.compile(r"^<!--\s*(style|meta)\[([^\]]*)\]\s*-->$")
 
@@ -24,21 +24,78 @@ def _parse_metadata(line: str) -> Metadata | None:
     return Metadata(props=props)
 
 
+def _parse_project_meta(lines: list[str]) -> tuple[ProjectMeta | None, int]:
+    """Parse project-level metadata from a leading multi-line HTML comment.
+
+    Expected format (first line must be exactly ``<!--``)::
+
+        <!--
+        ---
+        color: bright_cyan
+        slideBG: #1a1a2e
+        ---
+        -->
+
+    Returns (ProjectMeta | None, number_of_lines_consumed).
+    Blank lines and ``---`` separator lines inside the comment are ignored.
+    """
+    if not lines or lines[0].strip() != "<!--":
+        return None, 0
+
+    i = 1
+    content: list[str] = []
+    found_end = False
+    while i < len(lines):
+        stripped = lines[i].strip()
+        if stripped == "-->":
+            found_end = True
+            i += 1
+            break
+        content.append(stripped)
+        i += 1
+
+    if not found_end:
+        return None, 0
+
+    props: dict[str, str] = {}
+    for line in content:
+        if not line or line == "---":
+            continue
+        if ":" in line:
+            k, v = line.split(":", 1)
+            props[k.strip().lower()] = v.strip()
+
+    if not props:
+        return None, i
+
+    return ProjectMeta(
+        color=props.get("color"),
+        slide_bg=props.get("slidebg"),
+        title=props.get("title"),
+        author=props.get("author"),
+        date=props.get("date"),
+        table_of_content=props.get("tableofcontent") == "true",
+    ), i
+
+
 def _is_table_separator(line: str) -> bool:
     return bool(re.match(r"^\|[\s\-:|]+\|$", line.strip()))
 
 
-def parse_markdown(path: Path) -> list[Page]:
-    """Parse a Markdown file and return a list of Pages with Blocks.
+def parse_markdown(path: Path) -> tuple[list[Page], ProjectMeta | None]:
+    """Parse a Markdown file and return (pages, project_meta).
 
     Rules:
+    - An optional leading ``<!-- ... -->`` block carries project-level metadata.
     - H1 (# Title) starts a new Page and becomes its first Block.
     - Each Block is revealed individually during presentation.
     - A metadata line (<!-- style[...] --> or <!-- meta[...] -->) is consumed
       silently and attached to the next Block.
     - Unsupported elements (images, blockquotes) are skipped.
     """
-    lines = path.read_text(encoding="utf-8").splitlines()
+    all_lines = path.read_text(encoding="utf-8").splitlines()
+    project_meta, skip = _parse_project_meta(all_lines)
+    lines = all_lines[skip:]
     pages: list[Page] = []
     current_page: Page | None = None
     pending_meta: Metadata | None = None
@@ -166,4 +223,4 @@ def parse_markdown(path: Path) -> list[Page]:
         # ── Empty line ───────────────────────────────────────────────────
         i += 1
 
-    return pages
+    return pages, project_meta
