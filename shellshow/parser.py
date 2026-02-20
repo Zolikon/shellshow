@@ -5,7 +5,7 @@ from pathlib import Path
 
 from .models import Block, BlockType, Metadata, Page
 
-_METADATA_RE = re.compile(r"^(style|meta)\[([^\]]*)\]$")
+_METADATA_RE = re.compile(r"^<!--\s*(style|meta)\[([^\]]*)\]\s*-->$")
 
 
 def _parse_metadata(line: str) -> Metadata | None:
@@ -34,8 +34,8 @@ def parse_markdown(path: Path) -> list[Page]:
     Rules:
     - H1 (# Title) starts a new Page and becomes its first Block.
     - Each Block is revealed individually during presentation.
-    - A metadata line (style[...] or meta[...]) is consumed silently
-      and attached to the next Block.
+    - A metadata line (<!-- style[...] --> or <!-- meta[...] -->) is consumed
+      silently and attached to the next Block.
     - Unsupported elements (images, blockquotes) are skipped.
     """
     lines = path.read_text(encoding="utf-8").splitlines()
@@ -67,9 +67,34 @@ def parse_markdown(path: Path) -> list[Page]:
             i += 1
             continue
 
-        # ── Skip images and blockquotes ──────────────────────────────────
-        if stripped.startswith("![") or stripped.startswith(">"):
+        # ── Skip images ──────────────────────────────────────────────────
+        if stripped.startswith("!["):
             i += 1
+            continue
+
+        # ── GitHub-style alert or plain blockquote ───────────────────────
+        if stripped.startswith(">"):
+            alert_m = re.match(
+                r"^>\s*\[!(NOTE|TIP|IMPORTANT|WARNING|CAUTION)\]",
+                stripped,
+                re.IGNORECASE,
+            )
+            if alert_m:
+                kind = alert_m.group(1).upper()
+                alert_lines: list[str] = []
+                i += 1
+                while i < len(lines) and lines[i].strip().startswith(">"):
+                    alert_lines.append(re.sub(r"^>\s?", "", lines[i]))
+                    i += 1
+                _add_block(
+                    Block(
+                        type=BlockType.ALERT,
+                        content="\n".join(alert_lines),
+                        language=kind,
+                    )
+                )
+            else:
+                i += 1  # regular blockquote — skip
             continue
 
         # ── H1 → new page ───────────────────────────────────────────────

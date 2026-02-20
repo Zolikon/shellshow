@@ -30,33 +30,89 @@ Each of the following is revealed as a single step:
 | Pixel image | ` ```image ` … ` ``` ` | Digit grid → coloured blocks |
 | List item | `- item` or `1. item` | Each item is separate |
 | Table | `| col |` rows | Whole table at once |
+| Alert | `> [!NOTE]` … | Coloured panel (5 types) |
 | Divider | `---` | Horizontal rule |
 
-> **Not supported:** images (`![...]`) and blockquotes (`> ...`) are silently ignored.
+> **Not supported:** plain blockquotes (`> text`) and images (`![...]`) are silently ignored.
+
+---
+
+## Alerts
+
+GitHub-style alerts render as coloured panels. Write them as blockquotes with a type tag:
+
+```
+> [!NOTE]
+> Useful information users should know.
+
+> [!TIP]
+> Helpful advice for doing things better.
+
+> [!IMPORTANT]
+> Key information users need to achieve their goal.
+
+> [!WARNING]
+> Urgent info that needs immediate user attention.
+
+> [!CAUTION]
+> Advises about risks or negative outcomes.
+```
+
+The first line (`> [!TYPE]`) sets the type; all following `>` lines are the body.
+Inline formatting (**bold**, *italic*, `code`, etc.) works inside alert bodies.
+
+| Type | Border colour |
+|---|---|
+| `NOTE` | Blue |
+| `TIP` | Green |
+| `IMPORTANT` | Magenta |
+| `WARNING` | Yellow |
+| `CAUTION` | Red |
+
+> Plain blockquotes (`> text` without `[!TYPE]`) are still silently ignored.
+
+---
+
+## Inline formatting
+
+Standard Markdown inline styles work inside paragraphs, headings, and list items:
+
+| Style | Syntax | Result |
+|---|---|---|
+| Bold | `**text**` or `__text__` | **bold** |
+| Italic | `*text*` or `_text_` | *italic* |
+| Bold + italic | `***text***` or `___text___` | ***bold italic*** |
+| Strikethrough | `~~text~~` | ~~strikethrough~~ |
+| Inline code | `` `text` `` | `code` |
+| Underline | `<ins>text</ins>` | underlined |
+| Subscript | `<sub>text</sub>` | plain (no terminal support) |
+| Superscript | `<sup>text</sup>` | plain (no terminal support) |
+
+> Inline formatting is **not** applied inside fenced code blocks or pixel images.
 
 ---
 
 ## Metadata / styling
 
-Place a metadata line **directly before** a block. It is never displayed.
+Place a metadata line **directly before** a block. It is written as an HTML comment so it is invisible in other Markdown renderers.
 
 **Style shorthand** — any [Rich style string](https://rich.readthedocs.io/en/latest/style.html):
 
 ```
-style[bold italic]
+<!-- style[bold italic] -->
 This line will be bold and italic.
 ```
 
 **Key-value metadata** — keys separated by `|`:
 
 ```
-meta[color:cyan|text:bold]
+<!-- meta[color:cyan|text:bold] -->
 This line will be cyan and bold.
 
-meta[align:center]
+<!-- meta[align:center] -->
 This line will be centred.
 
-meta[color:yellow|text:bold|align:right]
+<!-- meta[color:yellow|text:bold|align:right] -->
 Keys can be combined freely.
 ```
 
@@ -67,7 +123,7 @@ Supported keys:
 | `color` | color name or `#rrggbb` | Text color |
 | `bg` | color name or `#rrggbb` | Background color (all block types) |
 | `text` | Rich style token | e.g. `bold`, `italic` |
-| `align` | `left` `center` `right` | Horizontal alignment |
+| `align` | `left` `center` `right` | Horizontal alignment (default: `center`) |
 | `padding` | 1, 2, or 4 integers | Whitespace around block (`padding:1`, `padding:1 4`, `padding:1 2 3 4`) |
 
 ---
@@ -134,7 +190,7 @@ Each digit is rendered as a 2-character wide coloured block. Example:
 ```markdown
 # My Presentation
 
-meta[color:cyan|text:bold]
+<!-- meta[color:cyan|text:bold] -->
 A styled opening line.
 
 ## First section
@@ -142,7 +198,7 @@ A styled opening line.
 - Bullet one
 - Bullet two
 
-style[italic]
+<!-- style[italic] -->
 A closing thought.
 
 ```python
@@ -184,6 +240,22 @@ PowerPoint animations.
 - `- item` or `1. item` — each list item is a separate reveal
 - Markdown table (`| col |` rows) — entire table is one reveal
 - `---` — horizontal rule divider
+- GitHub-style alert (see below) — coloured panel
+
+### Alert format
+Write alerts as a blockquote whose first line is `> [!TYPE]` followed by `>` body lines:
+```
+> [!NOTE]
+> Body text here.
+```
+Supported types and their border colours:
+- `NOTE` — blue
+- `TIP` — green
+- `IMPORTANT` — magenta
+- `WARNING` — yellow
+- `CAUTION` — red
+
+Inline formatting works inside alert bodies. Plain blockquotes (`> text` without `[!TYPE]`) are ignored.
 
 ### Pixel image format
 Use a fenced code block with language `image`. Each line is a row of digits (all rows must be the same length):
@@ -191,24 +263,33 @@ Use a fenced code block with language `image`. Each line is a row of digits (all
 - `1` = red, `2` = green, `3` = yellow, `4` = blue
 - `5` = pink, `6` = cyan, `7` = white, `8` = orange, `9` = purple
 
+### Inline formatting (within paragraphs, headings, list items)
+- `**bold**` or `__bold__`
+- `*italic*` or `_italic_`
+- `***bold italic***` or `___bold italic___`
+- `~~strikethrough~~`
+- `` `inline code` ``
+- `<ins>underline</ins>`
+- `<sub>subscript</sub>` and `<sup>superscript</sup>` (rendered as plain text — no terminal support)
+
 ### Not supported (will be ignored)
 - Images: `![alt](url)`
-- Blockquotes: `> text`
+- Plain blockquotes: `> text` (without a `[!TYPE]` tag)
 
 ### Optional metadata (styling)
-Place a metadata line **directly before** a block. It is never displayed.
+Place a metadata line **directly before** a block. Write it as an HTML comment — it is invisible in other Markdown renderers and never displayed by ShellShow.
 
 Style shorthand (Rich style string):
 ```
-style[bold italic]
+<!-- style[bold italic] -->
 This line will be bold and italic.
 ```
 
 Key-value metadata (keys separated by |):
 ```
-meta[color:cyan|text:bold]
-meta[align:center]
-meta[color:yellow|text:bold|align:right]
+<!-- meta[color:cyan|text:bold] -->
+<!-- meta[align:center] -->
+<!-- meta[color:yellow|text:bold|align:right] -->
 ```
 
 Supported `style[...]` tokens (space-separate to combine):
@@ -219,7 +300,7 @@ Supported `meta` keys and values:
   bright_red … bright_white, or any hex (#ff8800)
 - bg: same values as color — sets the background color
 - text: bold, italic, underline, strike, dim, reverse
-- align: left, center, right
+- align: left, center, right (default is center — omit to use center)
 - padding: 1, 2, or 4 space-separated integers (top/bottom, left/right, or all four sides)
 
 ## YOUR TASK

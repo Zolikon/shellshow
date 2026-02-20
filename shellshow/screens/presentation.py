@@ -4,6 +4,7 @@ import re
 
 import pyfiglet
 from rich.align import Align
+from rich.panel import Panel
 from rich.padding import Padding
 from rich.rule import Rule
 from rich.styled import Styled
@@ -17,6 +18,52 @@ from textual.screen import Screen
 from textual.widgets import Footer, Static
 
 from ..models import Block, BlockType, Metadata, Page
+
+_INLINE_RE = re.compile(
+    r"\*{3}(.+?)\*{3}"                            # 1: ***bold italic***
+    r"|(?<!\w)_{3}(.+?)_{3}(?!\w)"               # 2: ___bold italic___
+    r"|\*{2}(.+?)\*{2}"                           # 3: **bold**
+    r"|(?<!\w)_{2}(.+?)_{2}(?!\w)"               # 4: __bold__
+    r"|\*(.+?)\*"                                  # 5: *italic*
+    r"|(?<!\w)_([^\s_].*?[^\s_]|[^\s_])_(?!\w)"  # 6: _italic_ (word boundaries)
+    r"|~~(.+?)~~"                                  # 7: ~~strikethrough~~
+    r"|`(.+?)`"                                    # 8: `inline code`
+    r"|<ins>(.+?)</ins>"                           # 9: <ins>underline</ins>
+    r"|<sub>(.+?)</sub>"                           # 10: <sub>subscript</sub> (plain)
+    r"|<sup>(.+?)</sup>"                           # 11: <sup>superscript</sup> (plain)
+)
+
+_INLINE_STYLES = [
+    "bold italic",      # 1: ***
+    "bold italic",      # 2: ___
+    "bold",             # 3: **
+    "bold",             # 4: __
+    "italic",           # 5: *
+    "italic",           # 6: _
+    "strike",           # 7: ~~
+    "bold on #313244",  # 8: ` (inline code — Surface0 bg)
+    "underline",        # 9: <ins>
+    "",                 # 10: <sub> (no terminal support)
+    "",                 # 11: <sup> (no terminal support)
+]
+
+
+def _parse_inline(raw: str, base_style: str = "") -> Text:
+    """Convert markdown inline formatting tokens to a Rich Text with style spans."""
+    result = Text(style=base_style)
+    pos = 0
+    for m in _INLINE_RE.finditer(raw):
+        if m.start() > pos:
+            result.append(raw[pos : m.start()])
+        for idx, inner in enumerate(m.groups()):
+            if inner is not None:
+                result.append(inner, style=_INLINE_STYLES[idx])
+                break
+        pos = m.end()
+    if pos < len(raw):
+        result.append(raw[pos:])
+    return result
+
 
 _PIXEL_PALETTE: dict[str, str | None] = {
     "0": None,       # transparent
@@ -116,22 +163,21 @@ class PresentationScreen(Screen):
     def _to_renderable(self, block: Block):
         renderable = self._build_renderable(block)
         meta = block.metadata
-        if not meta:
-            return renderable
-        # bg for Table/HR — Text uses _apply_meta; Syntax uses background_color param
-        if (bg := meta.props.get("bg")) and not isinstance(renderable, (Text, Syntax)):
-            renderable = Styled(renderable, f"on {bg}")
-        # align
-        if align := meta.props.get("align"):
-            renderable = Align(renderable, align=align)  # type: ignore[arg-type]
-        # padding — accepts 1, 2, or 4 space-separated integers (CSS shorthand)
-        if pad_str := meta.props.get("padding"):
-            try:
-                parts = [int(x) for x in pad_str.split()]
-                pad = parts[0] if len(parts) == 1 else tuple(parts)  # type: ignore[assignment]
-                renderable = Padding(renderable, pad)  # type: ignore[arg-type]
-            except (ValueError, TypeError):
-                pass
+        if meta:
+            # bg for Table/HR — Text uses _apply_meta; Syntax uses background_color param
+            if (bg := meta.props.get("bg")) and not isinstance(renderable, (Text, Syntax)):
+                renderable = Styled(renderable, f"on {bg}")
+            # padding — accepts 1, 2, or 4 space-separated integers (CSS shorthand)
+            if pad_str := meta.props.get("padding"):
+                try:
+                    parts = [int(x) for x in pad_str.split()]
+                    pad = parts[0] if len(parts) == 1 else tuple(parts)  # type: ignore[assignment]
+                    renderable = Padding(renderable, pad)  # type: ignore[arg-type]
+                except (ValueError, TypeError):
+                    pass
+        # align — default to center; override with meta[align:left/right]
+        align = (meta.props.get("align") if meta else None) or "center"
+        renderable = Align(renderable, align=align)  # type: ignore[arg-type]
         return renderable
 
     def _build_renderable(self, block: Block):
@@ -147,15 +193,15 @@ class PresentationScreen(Screen):
                 self._apply_meta(t, meta)
                 return t
             case BlockType.H2:
-                t = Text(f"  {block.content}", style="bold cyan")
+                t = _parse_inline(f"  {block.content}", base_style="bold cyan")
                 self._apply_meta(t, meta)
                 return t
             case BlockType.H3:
-                t = Text(f"    {block.content}", style="bold blue")
+                t = _parse_inline(f"    {block.content}", base_style="bold blue")
                 self._apply_meta(t, meta)
                 return t
             case BlockType.TEXT:
-                t = Text(str(block.content))
+                t = _parse_inline(str(block.content))
                 self._apply_meta(t, meta)
                 return t
             case BlockType.CODE:
@@ -168,13 +214,30 @@ class PresentationScreen(Screen):
                     background_color=meta.props.get("bg") if meta else None,
                 )
             case BlockType.LIST_ITEM:
-                t = Text(str(block.content))
+                t = _parse_inline(str(block.content))
                 self._apply_meta(t, meta)
                 return t
             case BlockType.TABLE:
                 return self._render_table(block)
             case BlockType.HR:
                 return Rule(style="dim")
+            case BlockType.ALERT:
+                _ALERT_STYLES: dict[str, tuple[str, str]] = {
+                    "NOTE":      ("bright_blue",  "Note"),
+                    "TIP":       ("bright_green", "Tip"),
+                    "IMPORTANT": ("magenta",      "Important"),
+                    "WARNING":   ("yellow",       "Warning"),
+                    "CAUTION":   ("bright_red",   "Caution"),
+                }
+                kind = (block.language or "NOTE").upper()
+                color, title = _ALERT_STYLES.get(kind, ("white", kind.capitalize()))
+                content_text = _parse_inline(str(block.content))
+                return Panel(
+                    content_text,
+                    title=f"[bold {color}]{title}[/]",
+                    border_style=color,
+                    expand=True,
+                )
             case BlockType.IMAGE:
                 t = self._render_image(block)
                 self._apply_meta(t, meta)

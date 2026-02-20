@@ -12,6 +12,7 @@ class BlockType(Enum):
     TABLE = "table"
     HR = "hr"
     IMAGE = "image"
+    ALERT = "alert"
 
 
 @dataclass
