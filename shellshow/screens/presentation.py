@@ -31,6 +31,7 @@ _INLINE_RE = re.compile(
     r"|<ins>(.+?)</ins>"                           # 9: <ins>underline</ins>
     r"|<sub>(.+?)</sub>"                           # 10: <sub>subscript</sub> (plain)
     r"|<sup>(.+?)</sup>"                           # 11: <sup>superscript</sup> (plain)
+    r"|\[([^\]]+)\]\(([^)]+)\)"                   # 12+13: [text](url)
 )
 
 _INLINE_STYLES = [
@@ -55,10 +56,23 @@ def _parse_inline(raw: str, base_style: str = "") -> Text:
     for m in _INLINE_RE.finditer(raw):
         if m.start() > pos:
             result.append(raw[pos : m.start()])
-        for idx, inner in enumerate(m.groups()):
-            if inner is not None:
-                result.append(inner, style=_INLINE_STYLES[idx])
-                break
+        groups = m.groups()
+        # Groups 12+13 (index 11+12) are the link text and URL — handled specially.
+        if groups[11] is not None:
+            link_text = groups[11]
+            url = groups[12] or ""
+            result.append(link_text, style=f"underline bright_blue link {url}")
+        else:
+            for idx, inner in enumerate(groups[:11]):
+                if inner is not None:
+                    # Recursively parse the inner content so that e.g. **[link](url)**
+                    # correctly renders as a bold clickable link rather than raw markdown.
+                    inner_text = _parse_inline(inner)
+                    style = _INLINE_STYLES[idx]
+                    if style:
+                        inner_text.stylize(style)
+                    result.append_text(inner_text)
+                    break
         pos = m.end()
     if pos < len(raw):
         result.append(raw[pos:])

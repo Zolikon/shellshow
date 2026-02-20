@@ -87,6 +87,7 @@ Standard Markdown inline styles work inside paragraphs, headings, and list items
 | Underline | `<ins>text</ins>` | underlined |
 | Subscript | `<sub>text</sub>` | plain (no terminal support) |
 | Superscript | `<sup>text</sup>` | plain (no terminal support) |
+| Hyperlink | `[text](url)` | underlined bright-blue; clickable in supported terminals |
 
 > Inline formatting is **not** applied inside fenced code blocks or pixel images.
 
@@ -300,6 +301,7 @@ Use a fenced code block with language `image`. Each line is a row of digits (all
 - `` `inline code` ``
 - `<ins>underline</ins>`
 - `<sub>subscript</sub>` and `<sup>superscript</sup>` (rendered as plain text — no terminal support)
+- `[text](url)` — hyperlink; renders as underlined bright-blue text, clickable in terminals that support hyperlinks
 
 ### Not supported (will be ignored)
 - Images: `![alt](url)`

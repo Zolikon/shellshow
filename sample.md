@@ -236,6 +236,20 @@ Subscript: H<sub>2</sub>O — Superscript: E=mc<sup>2</sup>
 > [!CAUTION]
 > This is a **caution** — advises about risks or negative outcomes.
 
+# Links
+
+## Inline hyperlinks
+
+Visit [ShellShow on GitHub](https://github.com/example/shellshow) for the source code.
+
+Read the [Rich documentation](https://rich.readthedocs.io) for styling reference.
+
+Links render as **underlined bright-blue text** and are clickable in terminals that support hyperlinks (e.g. iTerm2, Windows Terminal, GNOME Terminal).
+
+## Links inside other inline styles
+
+You can combine links with other formatting: **[bold link](https://example.com)**
+
 # Pixel Images
 
 ## A heart drawn with digit 1 (red)
