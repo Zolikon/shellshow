@@ -68,6 +68,8 @@ def _parse_project_meta(lines: list[str]) -> tuple[ProjectMeta | None, int]:
     if not props:
         return None, i
 
+    raw_sep = props.get("pageseparator", "h2").lower()
+    page_separator = raw_sep if raw_sep in ("h1", "h2") else "h2"
     return ProjectMeta(
         color=props.get("color"),
         slide_bg=props.get("slidebg"),
@@ -77,6 +79,7 @@ def _parse_project_meta(lines: list[str]) -> tuple[ProjectMeta | None, int]:
         table_of_content=props.get("tableofcontent") == "true",
         align=props.get("align"),
         animate=props.get("animate"),
+        page_separator=page_separator,
     ), i
 
 
@@ -101,6 +104,8 @@ def parse_markdown(path: Path) -> tuple[list[Page], ProjectMeta | None]:
     pages: list[Page] = []
     current_page: Page | None = None
     pending_meta: Metadata | None = None
+    current_h1_title: str | None = None
+    page_sep = (project_meta.page_separator if project_meta else "h2")
 
     def _ensure_page() -> Page:
         nonlocal current_page
@@ -165,12 +170,23 @@ def parse_markdown(path: Path) -> tuple[list[Page], ProjectMeta | None]:
             block.metadata = pending_meta
             pending_meta = None
             current_page.blocks.append(block)
+            if page_sep == "h2":
+                current_h1_title = title
             i += 1
             continue
 
         # ── H2 ──────────────────────────────────────────────────────────
         if re.match(r"^## [^#]", raw):
-            _add_block(Block(type=BlockType.H2, content=raw[3:].strip()))
+            if page_sep == "h2":
+                title = raw[3:].strip()
+                current_page = Page(title=title, parent_title=current_h1_title)
+                pages.append(current_page)
+                block = Block(type=BlockType.H2, content=title)
+                block.metadata = pending_meta
+                pending_meta = None
+                current_page.blocks.append(block)
+            else:
+                _add_block(Block(type=BlockType.H2, content=raw[3:].strip()))
             i += 1
             continue
 

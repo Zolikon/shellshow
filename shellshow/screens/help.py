@@ -110,16 +110,19 @@ Supported keys:
 
 | Key | Effect |
 |---|---|
-| `title` | Generates a title page before slide 1: ASCII art title centered on screen |
-| `author` | Shown on the title page as "By &lt;author&gt;" above the date (optional) |
-| `date` | Shown bottom-left on the title page (optional; omitted if not set) |
+| `title` | Override the title page heading (default: first `# H1` in the file) |
+| `author` | Shown on the title page as "By &lt;author&gt;" (optional) |
+| `date` | Shown on the title page below the author (optional) |
 | `tableOfContent` | Set to `true` to insert a Table of Contents page after the title page |
 | `color` | Default text colour for every block (overridable per block with `meta[color:...]`) |
 | `slideBG` | Background colour applied to every slide (CSS color name or `#rrggbb`) |
 | `align` | Default block alignment: `left`, `center`, `right` (applies to all blocks except list items, which are always `left` unless overridden per block) |
 | `animate` | Default entrance animation for every block: `fade`, `slide`, `slide-left` (overridable per block with `meta[animate:...]`; omit for no animation) |
+| `pageSeparator` | Which heading level starts a new slide: `h1` (default H1 only) or `h2` (H1 = section break, H2 = new slide — ideal for README-style files) |
 
-When a title page is present, **← / p** from slide 1 navigates back to it.
+A title page is always shown first. **← / p** from slide 1 (or the TOC) navigates back to it.
+
+Press **t** at any time during the presentation to open the **Table of Contents modal**. Click any slide title to jump directly to it, or press **Escape** / click **Close** to dismiss without navigating.
 
 ---
 
@@ -328,14 +331,15 @@ slideBG: #0f0f23
 -->
 ```
 Supported keys:
-- `title` — generates a title page before slide 1; ASCII art centered on screen
-- `author` — shown on the title page as "By <author>" above the date (optional)
-- `date` — shown bottom-left on the title page (optional; omitted if not set)
-- `tableOfContent` — set to `true` to insert a Table of Contents page after the title page (lists all content slides by title)
+- `title` — override the title page heading; if omitted, the first `# H1` heading in the file is used
+- `author` — shown on the title page as "By <author>" (optional)
+- `date` — shown on the title page below the author (optional)
+- `tableOfContent` — set to `true` to insert a Table of Contents page after the title page (lists all content slides by title); press `t` during the presentation at any time to open a Table of Contents modal for direct slide navigation
 - `color` — default text colour for every block; overridable per block with `meta[color:...]`
 - `slideBG` — background colour applied to the entire slide area (CSS name or `#rrggbb`)
 - `align` — default block alignment: `left`, `center`, `right` (applies to all blocks except list items, which are always `left` unless overridden per block with `meta[align:...]`)
 - `animate` — default entrance animation for every block: `fade`, `slide`, `slide-left`; omit for no animation; overridable per block with `meta[animate:...]`
+- `pageSeparator` — `h1` (default: each H1 starts a new slide) or `h2` (H1 is a section-break slide, each H2 starts a new slide; useful for README-style files)
 
 The opening `<!--` must be alone on the first line; the closing `-->` must be alone on its own line.
 

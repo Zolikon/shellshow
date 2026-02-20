@@ -19,6 +19,7 @@ from textual.screen import Screen
 from textual.widgets import Footer, Static
 
 from ..models import Block, BlockType, Metadata, Page, ProjectMeta
+from .toc_modal import TocModal
 
 _INLINE_RE = re.compile(
     r"\*{3}(.+?)\*{3}"                            # 1: ***bold italic***
@@ -105,6 +106,7 @@ class PresentationScreen(Screen):
         Binding("pagedown", "next_page", "Next Page", show=False),
         Binding("p", "prev_page", "Prev Page", show=True),
         Binding("pageup", "prev_page", "Prev Page", show=False),
+        Binding("t", "show_toc", "Contents", show=True),
         Binding("escape", "back_to_menu", "Menu", show=True),
         Binding("q", "back_to_menu", "Menu", show=False),
     ]
@@ -117,12 +119,9 @@ class PresentationScreen(Screen):
         self.current_page_idx: int = 0
         # Start at 1 so the H1 header block is auto-visible on page load.
         self.current_block_idx: int = 1
-        self._on_title_page: bool = bool(project_meta and project_meta.title)
-        # Start on TOC only when there is no title page to show first.
-        self._on_toc_page: bool = (
-            not self._on_title_page
-            and bool(project_meta and project_meta.table_of_content)
-        )
+        # Title page is always shown first.
+        self._on_title_page: bool = True
+        self._on_toc_page: bool = False
 
     # ── Compose ──────────────────────────────────────────────────────────
 
@@ -171,23 +170,34 @@ class PresentationScreen(Screen):
             f"  [dim]│[/]  Block {visible_blocks}/{total_blocks}"
         )
 
+    def _effective_title(self) -> str:
+        """Return the presentation title: explicit meta title, else first H1, else empty."""
+        pm = self.project_meta
+        if pm and pm.title:
+            return pm.title
+        for page in self.pages:
+            for block in page.blocks:
+                if block.type == BlockType.H1:
+                    return str(block.content)
+        return ""
+
     def _show_title_page(self) -> None:
         pm = self.project_meta
-        assert pm and pm.title
-        figlet = pyfiglet.figlet_format(pm.title, font="standard", width=self.app.console.width)
-        title_style = f"bold {pm.color}" if pm.color else "bold bright_white"
-        title_text = Text(figlet, style=title_style, justify="center")
+        title = self._effective_title()
+        figlet = pyfiglet.figlet_format(title or " ", font="standard", width=self.app.console.width)
+        title_style = f"bold {pm.color}" if pm and pm.color else "bold bright_white"
+        title_text = Text(figlet, style=title_style)
         self.query_one("#title-art", Static).update(Align(title_text, "center"))
 
         bottom = Text()
-        if pm.author:
+        if pm and pm.author:
             bottom.append(f"By {pm.author}\n", style="#a6adc8")
-        if pm.date:
+        if pm and pm.date:
             bottom.append(pm.date, style="#6c7086")
         self.query_one("#title-bottom", Static).update(bottom)
 
         self.query_one("#pres-header", Static).update(
-            f" [bold cyan]{pm.title}[/]  "
+            f" [bold cyan]{title}[/]  "
             f"[dim]│[/]  Title Page"
             f"  [dim]│[/]  {len(self.pages)} slide{'s' if len(self.pages) != 1 else ''}"
         )
@@ -218,8 +228,12 @@ class PresentationScreen(Screen):
         t = Text()
         t.append("Table of Contents\n\n", style="bold cyan")
         for i, page in enumerate(self.pages):
-            t.append(f"{i + 1}.  ", style="dim cyan")
-            t.append((page.title or "(untitled)") + "\n", style="bold")
+            if page.parent_title is not None:
+                t.append(f"  {i + 1}.  ", style="dim cyan")
+                t.append((page.title or "(untitled)") + "\n")
+            else:
+                t.append(f"{i + 1}.  ", style="dim cyan")
+                t.append((page.title or "(untitled)") + "\n", style="bold")
         toc.mount(Static(t))
         self.query_one("#pres-header", Static).update(
             " [bold cyan]Table of Contents[/]  "
@@ -245,10 +259,27 @@ class PresentationScreen(Screen):
     def _render_current_state(self) -> None:
         container = self.query_one("#content", VerticalScroll)
         container.remove_children()
-        widgets = [
-            Static(self._to_renderable(block), classes=f"block block-{block.type.value}")
-            for block in self._page.blocks[: self.current_block_idx]
-        ]
+        page = self._page
+        widgets: list[Static] = []
+
+        if page.parent_title is not None:
+            # h2 mode: show the parent H1 section as figlet above slide content
+            figlet = pyfiglet.figlet_format(
+                page.parent_title, font="standard", width=self.app.console.width
+            )
+            t = Text(figlet, style="bold bright_white")
+            self._apply_meta(t, None)  # apply project color if set
+            widgets.append(Static(Align(t, "left"), classes="block block-h1"))
+
+        for idx, block in enumerate(page.blocks[: self.current_block_idx]):
+            if idx == 0 and page.parent_title is not None and block.type == BlockType.H2:
+                # H2 is the slide subtitle in h2 mode — render as underlined
+                t = _parse_inline(str(block.content), base_style="bold underline cyan")
+                self._apply_meta(t, block.metadata)
+                widgets.append(Static(Align(t, "left"), classes="block block-h2"))
+            else:
+                widgets.append(Static(self._to_renderable(block), classes=f"block block-{block.type.value}"))
+
         if widgets:
             container.mount(*widgets)
         self._update_header()
@@ -466,8 +497,7 @@ class PresentationScreen(Screen):
         if self._on_title_page:
             return
         if self._on_toc_page:
-            if self.project_meta and self.project_meta.title:
-                self._go_to_title_page()
+            self._go_to_title_page()
             return
         if self.current_block_idx > 1:
             self.current_block_idx -= 1
@@ -478,7 +508,7 @@ class PresentationScreen(Screen):
             self._render_current_state()
         elif self.project_meta and self.project_meta.table_of_content:
             self._go_to_toc_page()
-        elif self.project_meta and self.project_meta.title:
+        else:
             self._go_to_title_page()
 
     def action_next_page(self) -> None:
@@ -497,8 +527,7 @@ class PresentationScreen(Screen):
         if self._on_title_page:
             return
         if self._on_toc_page:
-            if self.project_meta and self.project_meta.title:
-                self._go_to_title_page()
+            self._go_to_title_page()
             return
         if self.current_page_idx > 0:
             self.current_page_idx -= 1
@@ -506,8 +535,23 @@ class PresentationScreen(Screen):
             self._render_current_state()
         elif self.project_meta and self.project_meta.table_of_content:
             self._go_to_toc_page()
-        elif self.project_meta and self.project_meta.title:
+        else:
             self._go_to_title_page()
+
+    def action_show_toc(self) -> None:
+        def on_dismiss(result: int | None) -> None:
+            if result is None:
+                return
+            self._on_title_page = False
+            self._on_toc_page = False
+            self.query_one("#title-page", Container).display = False
+            self.query_one("#toc-page", Container).display = False
+            self.query_one("#content", VerticalScroll).display = True
+            self.current_page_idx = result
+            self.current_block_idx = 1
+            self._render_current_state()
+
+        self.app.push_screen(TocModal(self.pages, self.current_page_idx), on_dismiss)
 
     def action_back_to_menu(self) -> None:
         if self.exit_on_back:

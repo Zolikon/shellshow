@@ -5,6 +5,7 @@ date: 2026-02-20
 tableOfContent: true
 color: write
 slidebg: #2e4d37
+pageSeparator: h2
 -->
 
 <!-- meta[color:green] -->
@@ -34,6 +35,8 @@ Powered by Textual & Rich
 **n / PageDown** — jump to next slide
 
 **p / PageUp** — jump to previous slide
+
+**t** — open Table of Contents modal (click any slide to jump to it)
 
 **Escape** — return to menu
 

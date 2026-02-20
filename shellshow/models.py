@@ -34,6 +34,7 @@ class Block:
 class Page:
     title: str
     blocks: list[Block] = field(default_factory=list)
+    parent_title: str | None = None   # H1 section this page belongs to (h2 mode)
 
 
 @dataclass
@@ -47,3 +48,4 @@ class ProjectMeta:
     table_of_content: bool = False  # if True, inserts a TOC page after the title page
     align: str | None = None         # default block alignment: left / center / right (default: center)
     animate: str | None = None       # default entrance animation for all blocks (fade / slide / slide-left)
+    page_separator: str = "h2"       # "h1" or "h2" — which heading level starts a new slide
