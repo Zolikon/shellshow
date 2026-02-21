@@ -405,6 +405,154 @@ Requirements:
 """
 
 
+_SKILL_MD = """\
+# ShellShow — AI Coding Assistant Reference
+
+ShellShow is a terminal presentation tool that reads a **Markdown file** and
+displays it as an interactive slideshow. Blocks are revealed one at a time.
+
+## File structure
+
+Each `# H1` heading starts a new slide. The H1 title is rendered as ASCII art
+and is always visible when the slide loads. Everything else is a *block* —
+revealed one step at a time by the presenter.
+
+```markdown
+# Slide Title
+
+Plain paragraph line — one reveal.
+
+## Section heading
+
+- Each bullet is its own reveal.
+
+# Next Slide
+```
+
+## Presentation-level configuration (front-matter)
+
+An optional HTML comment block on the **very first line** of the file sets
+defaults that apply to the whole presentation:
+
+```markdown
+<!--
+title: Override Title
+author: Jane Doe
+date: 2025-06-01
+color: bright_cyan
+slideBG: #0f0f23
+align: center
+animate: fade
+tableOfContent: true
+pageSeparator: h1
+-->
+```
+
+The `<!--` must be alone on line 1; `-->` must be alone on its own line.
+
+| Key | What it controls |
+|---|---|
+| `title` | The heading shown on the auto-generated title page. Defaults to the first `# H1` in the file if omitted. |
+| `author` | Shown on the title page as "By \<author\>". Omit to hide. |
+| `date` | Shown on the title page below the author. Omit to hide. |
+| `tableOfContent` | Set to `true` to insert a Table of Contents slide (listing all content slides by title) immediately after the title page. |
+| `color` | Default text colour for every block. Accepts ANSI names (`red`, `bright_cyan`, …) or hex (`#ff8800`). Can be overridden per block with `meta[color:...]`. |
+| `slideBG` | Background colour for the slide area (CSS name or `#rrggbb`). Applied to every slide uniformly. |
+| `align` | Default horizontal alignment for all blocks: `left`, `center`, or `right`. List items always default to `left` regardless of this setting (override per item with `meta[align:...]`). |
+| `animate` | Default entrance animation applied to every block: `fade`, `slide`, or `slide-left`. Omit for no animation. Overridable per block. |
+| `pageSeparator` | Which heading level creates a new slide. `h1` (default): each H1 is a slide. `h2`: H1 acts as a section-break slide and each H2 starts a new content slide — useful for README-style files where H2 is the natural section boundary. |
+
+## Block types
+
+| Block | Syntax | Notes |
+|---|---|---|
+| Slide title | `# Title` | ASCII art; new slide |
+| H2 heading | `## Heading` | Section header |
+| H3 heading | `### Heading` | Sub-heading |
+| Paragraph | plain text | One reveal per line |
+| Code block | ` ```lang ` … ` ``` ` | Syntax-highlighted |
+| Pixel image | ` ```image ` … ` ``` ` | Digit grid (see below) |
+| List item | `- item` / `1. item` | Each item = one reveal |
+| Table | `\| col \|` rows | Whole table = one reveal |
+| Alert | `> [!NOTE]` … | Coloured panel |
+| Divider | `---` | Horizontal rule |
+
+> Plain blockquotes (`> text`) and images (`![…](…)`) are **silently ignored**.
+
+## Alerts
+
+```markdown
+> [!NOTE]
+> Blue panel — informational.
+
+> [!TIP]
+> Green panel — helpful advice.
+
+> [!IMPORTANT]
+> Magenta panel — key information.
+
+> [!WARNING]
+> Yellow panel — urgent.
+
+> [!CAUTION]
+> Red panel — risks.
+```
+
+Inline formatting works inside alert bodies.
+
+## Inline formatting
+
+`**bold**`, `*italic*`, `***bold italic***`, `~~strike~~`, `` `code` ``,
+`<ins>underline</ins>`, `[text](url)`.
+
+## Per-block metadata (optional)
+
+Place an HTML comment **directly before** a block. It is invisible in other
+Markdown renderers and never displayed by ShellShow.
+
+```markdown
+<!-- style[bold italic] -->
+This line is bold and italic.
+
+<!-- meta[color:cyan|text:bold|align:center|animate:fade] -->
+Styled, centred, animated line.
+
+<!-- meta[bg:#1e1e2e|padding:1 4] -->
+Custom background and padding.
+```
+
+### `style[...]` tokens
+`bold`, `italic`, `underline`, `strike`, `dim`, `reverse`
+(space-separate to combine: `style[bold italic]`)
+
+### `meta[...]` keys
+| Key | Values |
+|---|---|
+| `color` | ANSI name (`red` … `bright_white`) or hex (`#ff8800`) |
+| `bg` | same as `color` — sets the block background |
+| `text` | Rich style token (`bold`, `italic`, …) |
+| `align` | `left` `center` `right` |
+| `padding` | 1, 2, or 4 integers (CSS shorthand order) |
+| `animate` | `fade` \| `slide` \| `slide-left` (forward reveal only) |
+
+## Pixel images
+
+```markdown
+\`\`\`image
+0110110
+1111111
+0111110
+0011100
+0001000
+\`\`\`
+```
+
+Digit mapping: `0`=transparent, `1`=red, `2`=green, `3`=yellow, `4`=blue,
+`5`=pink, `6`=cyan, `7`=white, `8`=orange, `9`=purple.
+Each digit renders as a 2-char coloured block; all rows must be equal length.
+"""
+
+
 class HelpScreen(Screen):
     BINDINGS = [Binding("escape", "back", "Back")]
 
@@ -415,11 +563,18 @@ class HelpScreen(Screen):
         with Horizontal(id="help-actions"):
             yield Button("Back to Menu", variant="default", id="btn-back")
             yield Static("", id="help-actions-gap")
+            yield Button("Copy as SKILL.md", variant="default", id="btn-skill")
             yield Button("Copy as LLM Prompt", variant="primary", id="btn-copy")
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-back":
             self.app.pop_screen()
+        elif event.button.id == "btn-skill":
+            try:
+                self.app.copy_to_clipboard(_SKILL_MD)
+                self.notify("SKILL.md copied — paste into your project for AI coding assistants.")
+            except Exception:
+                self.notify("Clipboard unavailable in this terminal.", severity="error")
         elif event.button.id == "btn-copy":
             try:
                 self.app.copy_to_clipboard(_LLM_PROMPT)
