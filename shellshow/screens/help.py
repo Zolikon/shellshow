@@ -122,7 +122,7 @@ Supported keys:
 
 A title page is always shown first. **← / p** from slide 1 (or the TOC) navigates back to it.
 
-Press **t** at any time during the presentation to open the **Table of Contents modal**. Click any slide title to jump directly to it, or press **Escape** / click **Close** to dismiss without navigating.
+Press **t** at any time during the presentation to open the **Table of Contents modal**. Use **↑/↓** to navigate, **Enter** to jump to the selected slide, or press **Escape** / click **Close** to dismiss without navigating.
 
 ---
 
@@ -230,6 +230,22 @@ Each digit is rendered as a 2-character wide coloured block. Example:
 
 ---
 
+## Update notices
+
+When a newer version of ShellShow is available on GitHub, a notice appears at the
+bottom of the menu screen automatically on startup:
+
+```
+Update available: 1.2.0  —  https://github.com/<owner>/shellshow/releases
+```
+
+The check runs in a background thread using only stdlib (`urllib`). It contacts
+the GitHub Releases API with a 3-second timeout. If the network is unavailable
+or the check fails for any reason, it is silently ignored and the app continues
+normally.
+
+---
+
 ## Example
 
 ```markdown
@@ -334,7 +350,7 @@ Supported keys:
 - `title` — override the title page heading; if omitted, the first `# H1` heading in the file is used
 - `author` — shown on the title page as "By <author>" (optional)
 - `date` — shown on the title page below the author (optional)
-- `tableOfContent` — set to `true` to insert a Table of Contents page after the title page (lists all content slides by title); press `t` during the presentation at any time to open a Table of Contents modal for direct slide navigation
+- `tableOfContent` — set to `true` to insert a Table of Contents page after the title page (lists all content slides by title); press `t` during the presentation at any time to open a Table of Contents modal — use ↑/↓ to navigate, Enter to jump, Escape to close
 - `color` — default text colour for every block; overridable per block with `meta[color:...]`
 - `slideBG` — background colour applied to the entire slide area (CSS name or `#rrggbb`)
 - `align` — default block alignment: `left`, `center`, `right` (applies to all blocks except list items, which are always `left` unless overridden per block with `meta[align:...]`)
@@ -370,6 +386,12 @@ Supported `meta` keys and values:
 - align: left, center, right (default is center — omit to use center)
 - padding: 1, 2, or 4 space-separated integers (top/bottom, left/right, or all four sides)
 - animate: fade | slide | slide-left — entrance animation on forward reveal only; ignored on backward navigation and H1 titles
+
+### Update notices (informational)
+ShellShow checks for a newer GitHub release at startup via a background thread
+(stdlib urllib only, 3-second timeout). A notice appears at the bottom of the
+menu screen if a newer version is found. This is invisible inside the presentation
+itself; mention it only if the user asks about the update workflow.
 
 ## YOUR TASK
 

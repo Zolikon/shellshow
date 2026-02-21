@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(uv run python:*)",
-      "WebFetch(domain:docs.github.com)"
+      "WebFetch(domain:docs.github.com)",
+      "WebSearch",
+      "WebFetch(domain:resources.github.com)",
+      "WebFetch(domain:github.com)",
+      "Bash(tail:*)"
     ]
   }
 }

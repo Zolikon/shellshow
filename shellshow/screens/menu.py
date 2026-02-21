@@ -1,16 +1,18 @@
 """Main menu screen with ASCII logo and navigation options."""
 
-import tomllib
 from pathlib import Path
 
 import pyfiglet
+from textual import work
 from textual.app import ComposeResult
 from textual.binding import Binding
 from textual.containers import Center, Container, Middle
 from textual.screen import Screen
 from textual.widgets import Button, Static
 
+from .. import __version__ as _CURRENT_VERSION
 from ..parser import parse_markdown
+from ..updater import GITHUB_REPO, check_for_update
 from .file_browser import FileBrowserScreen
 from .help import HelpScreen
 
@@ -19,15 +21,8 @@ try:
 except pyfiglet.FontNotFound:
     _LOGO = pyfiglet.figlet_format("ShellShow")
 
-def _read_version() -> str:
-    try:
-        pyproject = Path(__file__).parents[2] / "pyproject.toml"
-        with pyproject.open("rb") as f:
-            return f"v{tomllib.load(f)['project']['version']}"
-    except Exception:
-        return "v?"
-
-_VERSION = _read_version()
+_VERSION = f"v{_CURRENT_VERSION}"
+_UPDATE_URL = f"https://github.com/{GITHUB_REPO}/releases"
 
 
 class MenuScreen(Screen):
@@ -43,6 +38,8 @@ class MenuScreen(Screen):
     _loaded_path: Path | None = None
 
     def compose(self) -> ComposeResult:
+        # Declared first so it docks above #menu-version
+        yield Static("", id="menu-update")
         yield Static(_VERSION, id="menu-version")
         with Center():
             with Middle():
@@ -60,6 +57,24 @@ class MenuScreen(Screen):
         self.query_one("#loaded-file").display = False
         self.query_one("#btn-start").display = False
         self.query_one("#btn-reload").display = False
+        self.query_one("#menu-update").display = False
+        self._check_for_update()
+
+    @work(thread=True)
+    def _check_for_update(self) -> None:
+        """Run the update check in a background thread; never raises."""
+        latest = check_for_update()
+        if latest:
+            self.call_from_thread(self._show_update_notice, latest)
+
+    def _show_update_notice(self, latest: str) -> None:
+        notice = (
+            f"[bold yellow]Update available:[/] [cyan]{latest}[/]  —  "
+            f"[dim]{_UPDATE_URL}[/]"
+        )
+        widget = self.query_one("#menu-update", Static)
+        widget.update(notice)
+        widget.display = True
 
     def on_button_pressed(self, event: Button.Pressed) -> None:
         if event.button.id == "btn-load":

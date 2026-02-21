@@ -35,6 +35,13 @@ MenuScreen {
     padding: 0 1;
 }
 
+#menu-update {
+    dock: bottom;
+    color: #f9e2af;
+    padding: 0 1;
+    display: none;
+}
+
 #loaded-file {
     text-align: center;
     padding: 1 0 0 0;
@@ -160,26 +167,23 @@ TocModal {
     width: 60%;
     height: 80%;
     border: thick #89b4fa;
+    border-title-color: #89b4fa;
+    border-title-style: bold;
     background: #1e1e2e;
-}
-
-#toc-modal-title {
-    background: #313244;
-    color: #89b4fa;
-    height: 3;
-    padding: 1 2;
-    border-bottom: solid #45475a;
 }
 
 #toc-modal-list {
     height: 1fr;
     padding: 1 2;
+    border: none;
+    background: #1e1e2e;
 }
 
-#toc-modal-list Button {
-    width: 100%;
-    margin-bottom: 0;
+#toc-modal-list > ListItem {
+    padding: 0 1;
+    background: #1e1e2e;
 }
+
 
 #toc-modal-actions {
     height: auto;
