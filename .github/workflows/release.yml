@@ -4,9 +4,17 @@ on:
   push:
     tags:
       - "*.*.*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Version to release (e.g. 1.2.0)"
+        required: true
 
 permissions:
   contents: write
+
+env:
+  RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
 
 jobs:
   build:
@@ -45,7 +53,7 @@ jobs:
       - name: Patch version from tag
         shell: python
         env:
-          RELEASE_TAG: ${{ github.ref_name }}
+          RELEASE_TAG: ${{ env.RELEASE_TAG }}
         run: |
           import re, os
           tag = os.environ["RELEASE_TAG"]
@@ -83,8 +91,8 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.ref_name }}
-          name: "ShellShow ${{ github.ref_name }}"
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: "ShellShow ${{ env.RELEASE_TAG }}"
           draft: false
           prerelease: false
           files: |
@@ -92,7 +100,7 @@ jobs:
             dist/shellshow-macos/shellshow-macos
             dist/shellshow.exe/shellshow.exe
           body: |
-            ## ShellShow ${{ github.ref_name }}
+            ## ShellShow ${{ env.RELEASE_TAG }}
 
             Download the binary for your platform:
 
