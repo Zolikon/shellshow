@@ -5,7 +5,7 @@
 # Output:  dist/shellshow        (Linux / macOS)
 #          dist/shellshow.exe    (Windows)
 
-from PyInstaller.utils.hooks import collect_data_files
+from PyInstaller.utils.hooks import collect_data_files, collect_submodules
 
 block_cipher = None
 
@@ -27,6 +27,7 @@ a = Analysis(
         *pyfiglet_datas,
     ],
     hiddenimports=[
+        *collect_submodules("rich._unicode_data"),
         "textual",
         "textual.app",
         "textual.widgets",
@@ -45,7 +46,6 @@ a = Analysis(
         "textual.css.query",
         "pyfiglet",
         "pyfiglet.fonts",
-        "importlib.metadata",
         "urllib.request",
     ],
     hookspath=[],
