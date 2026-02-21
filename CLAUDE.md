@@ -4,6 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Rules
 
+- **Every feature must be fully usable with keyboard only.** No feature may require mouse interaction; mouse is an optional enhancement only.
 - **Whenever a feature or styling change is made, update `shellshow/screens/help.py` to keep `_HELP_MARKDOWN` and `_LLM_PROMPT` in sync.** Both the display content and the LLM prompt must reflect the current behaviour.
 - **Whenever a feature or styling change is made, update `sample.md`** so it demonstrates the current full feature set.
 
