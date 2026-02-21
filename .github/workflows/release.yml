@@ -43,16 +43,17 @@ jobs:
         run: uv sync --dev
 
       - name: Patch version from tag
+        shell: python
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
-          python -c "
-import re
-path = 'shellshow/__init__.py'
-tag = '${{ github.ref_name }}'
-text = open(path).read()
-text = re.sub(r'__version__: str = \"[^\"]+\"', f'__version__: str = \"{tag}\"', text)
-open(path, 'w').write(text)
-print(f'Patched __version__ to {tag}')
-"
+          import re, os
+          tag = os.environ["RELEASE_TAG"]
+          path = "shellshow/__init__.py"
+          text = open(path).read()
+          text = re.sub(r'__version__: str = "[^"]+"', f'__version__: str = "{tag}"', text)
+          open(path, "w").write(text)
+          print(f"Patched __version__ to {tag}")
 
       - name: Build binary
         run: uv run pyinstaller shellshow.spec
